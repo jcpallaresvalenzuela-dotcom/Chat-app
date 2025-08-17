@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>NOIC</title>
+  <style>
+    :root {
+      --bg: #0a0f14;
+      --panel: #0f1620;
+      --text: #e7eef7;
+      --muted: #9fb0c6;
+      --accent1: #00ff95;   /* player A */
+      --accent2: #7a5cff;   /* player B */
+      --border: #1b2a3c;
+      --chip: #0b1118;
+      --userBubble: #101826;
+      --sysBubble: #0d1521;
+      --ok: #00e5ff;
+      --danger: #ff4d6d;
+      --shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%; margin: 0;
+      background: linear-gradient(180deg,#070b10,#0a0f14 30%, #070b10);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      font-size: 16px; line-height: 1.5;
+    }
+
+    /* Logo superior izq */
+    .logo {
+      position: absolute; top: 12px; left: 16px;
+      font-weight: 600; letter-spacing: .08em; color: var(--ok);
+      text-shadow: 0 0 10px rgba(0,229,255,.45);
+      font-size: 14px;
+    }
+
+    /* Gate súper simple, centrado en pantalla */
+    .gate-wrap {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .gate-inner {
+      width: 100%; max-width: 560px;
+      display: grid; gap: 12px;
+      text-align: center;
+    }
+    .gate-inner input[type=text] {
+      width: 100%; padding: 14px 16px; border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0b1118; color: var(--text); outline: none;
+    }
+    .status { font-size: 14px; color: var(--muted); }
+    .status.center { text-align: center; }
+    .error { color: var(--danger); }
+
+    /* Chat único */
+    .chat-wrap {
+      display: none;
+      padding: 24px 16px 120px;
+      min-height: 100vh;
+    }
+    .chat {
+      max-width: 820px; margin: 0 auto;
+    }
+    .msg {
+      display: block;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .avatar {
+      width: 48px; height: 48px; border-radius: 10px; display: grid; place-items: center;
+      border: 1px solid var(--border); background: #0b1118; font-weight: 700; font-size: 14px;
+    }
+    .avatar.a { color: var(--accent1); }
+    .avatar.b { color: var(--accent2); }
+         .bubble .name {
+       display: block; font-size: 16px; font-weight: bold; color: var(--text); margin-bottom: 6px;
+       font-family: monospace; line-height: 1.5;
+     }
+     .bubble .text { 
+       white-space: pre-wrap; word-break: break-word; color: var(--text);
+       font-family: monospace; font-size: 16px; line-height: 1.5;
+     }
+
+    /* Composer inferior fijo */
+    .composer {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(180deg, transparent, rgba(7,11,16,.75) 30%, rgba(7,11,16,.95));
+      padding: 18px 12px;
+    }
+    .composer-inner {
+      max-width: 820px; margin: 0 auto;
+      display: block;
+      padding: 10px;
+    }
+    .composer input[type=text] {
+      background: transparent; border: none; outline: none; color: var(--text);
+      padding: 8px 0; margin-left: 8px; font-family: monospace;
+      caret-color: transparent;
+      width: 100%;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    
+    #input-container {
+      position: relative;
+      display: inline-block;
+    }
+    
+    /* Cursor parpadeante como terminal */
+    .cursor {
+      position: absolute;
+      font-family: monospace;
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--text);
+      animation: blink 1s infinite;
+      left: 0;
+      top: 8px;
+      pointer-events: none;
+    }
+    
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    .composer button { border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <div class="logo">NOIC</div>
+
+  <!-- Gate centrado sin recuadro ni título -->
+  <div id="gate-wrap" class="gate-wrap">
+    <div class="gate-inner">
+      <input id="username" type="text" maxlength="20" placeholder="Username" />
+      <div id="gate-msg" class="status center"></div>
+    </div>
+  </div>
+
+  <!-- Chat único -->
+  <div id="chat-wrap" class="chat-wrap">
+    <div class="chat" id="chat">
+      <div class="msg user" id="msgA">
+        <div class="bubble">
+          <div class="name" id="nameA" style="display: none;"></div>
+          <div class="text" id="textA" style="display: none;"></div>
+        </div>
+      </div>
+
+      <div class="msg" id="msgB">
+        <div class="bubble">
+          <div class="name" id="nameB" style="display: none;"></div>
+          <div class="text" id="textB" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="composer-inner">
+        <span id="current-username" style="font-weight: bold; color: var(--text); font-family: monospace; font-size: 16px; line-height: 1.5;"></span>
+        <div id="input-container" style="display: inline-block; position: relative;">
+          <input id="text" type="text" maxlength="500"/>
+          <span id="cursor" class="cursor">_</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+ (() => {
+   const $ = (id) => document.getElementById(id);
+   let ws = null;
+   
+   // Colores claros para usernames (fáciles de ver en fondo negro)
+   const lightColors = [
+     '#00ff95', '#7a5cff', '#00e5ff', '#ff4d6d', '#ffb347', '#87ceeb', 
+     '#98fb98', '#dda0dd', '#f0e68c', '#ff69b4', '#00ced1', '#32cd32',
+     '#ff6347', '#40e0d0', '#ee82ee', '#90ee90', '#ffa500', '#ff1493'
+   ];
+   
+   let playerAColor = '';
+   let playerBColor = '';
+   
+   // Función para generar colores aleatorios diferentes
+   function generateRandomColors() {
+     const shuffled = [...lightColors].sort(() => 0.5 - Math.random());
+     playerAColor = shuffled[0];
+     playerBColor = shuffled[1];
+     
+     // Asegurar que ningún color sea negro o muy oscuro
+     if (playerAColor === '#000000' || playerAColor === '#000') {
+       playerAColor = '#00ff95'; // Color verde por defecto
+     }
+     if (playerBColor === '#000000' || playerBColor === '#000') {
+       playerBColor = '#7a5cff'; // Color púrpura por defecto
+     }
+   }
+
+  function setGateMessage(msg, isError=false) {
+    const el = $("gate-msg");
+    el.textContent = msg || "";
+    el.className = "status center" + (isError ? " error" : "");
+  }
+
+     function renderState(payload) {
+     const players = payload.players || [];
+     const a = players[0] || {name:"playerA", last:""};
+     const b = players[1] || {name:"playerB", last:""};
+
+     // Solo mostrar username A y texto si hay mensaje real
+     if (a.last && a.last.trim() !== "" && a.last.trim() !== "-") {
+       $("nameA").textContent = a.name;
+       $("nameA").style.display = "block";
+       $("nameA").style.color = playerAColor;
+       $("textA").textContent = a.last;
+       $("textA").style.display = "block";
+     } else {
+       $("nameA").style.display = "none";
+       $("textA").style.display = "none";
+     }
+
+           // Solo mostrar username B y texto si hay mensaje real (más estricto)
+      if (b.last && b.last.trim() !== "" && b.last.trim() !== "-" && b.last.trim() !== "—") {
+        $("nameB").textContent = b.name;
+        $("nameB").style.display = "block";
+        $("nameB").style.color = playerBColor;
+        $("textB").textContent = b.last;
+        $("textB").style.display = "block";
+      } else {
+        $("nameB").style.display = "none";
+        $("textB").style.display = "none";
+      }
+   }
+
+     function connect(name) {
+     const proto = location.protocol === "https:" ? "wss" : "ws";
+     const url = `${proto}://${location.host}/ws?username=${encodeURIComponent(name)}`;
+     ws = new WebSocket(url);
+
+     ws.onopen = () => {
+       // Generar colores aleatorios para los players
+       generateRandomColors();
+       
+       setGateMessage("Conectado.");
+       $("gate-wrap").style.display = "none";
+       $("chat-wrap").style.display = "block";
+       
+       // Limpiar completamente el chat al conectar
+       $("nameA").style.display = "none";
+       $("textA").style.display = "none";
+       $("nameB").style.display = "none";
+       $("textB").style.display = "none";
+       
+       $("current-username").textContent = "➜ " + name + " ";
+       $("text").focus();
+       // Posicionar cursor inicialmente
+       setTimeout(positionCursor, 100);
+     };
+
+    ws.onmessage = (ev) => {
+      try {
+        const payload = JSON.parse(ev.data);
+        if (payload.type === "state") renderState(payload);
+        else if (payload.type === "error") {
+          // Error desde el backend (p. ej., sala llena)
+          $("chat-wrap").style.display = "none";
+          $("gate-wrap").style.display = "flex";
+          setGateMessage(payload.message || "Error", true);
+        }
+      } catch (e) { console.error("bad message", e); }
+    };
+
+    ws.onclose = () => {
+      // Mostrar mensaje centrado al cerrar la conexión
+      $("chat-wrap").style.display = "none";
+      $("gate-wrap").style.display = "flex";
+      setGateMessage("Conexión cerrada.", true);
+      $("username").focus();
+    };
+
+    ws.onerror = () => {
+      $("chat-wrap").style.display = "none";
+      $("gate-wrap").style.display = "flex";
+      setGateMessage("No se pudo conectar. ¿Servidor corriendo?", true);
+      $("username").focus();
+    };
+  }
+
+  // Enter para entrar al chat directamente
+  $("username").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const name = ($("username").value || "").trim();
+      if (!name) { setGateMessage("El username no puede estar vacío.", true); return; }
+      if (name.length > 20) { setGateMessage("Username demasiado largo.", true); return; }
+      connect(name);
+    }
+  });
+
+
+
+  $("text").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const t = ($("text").value || "").trim();
+      if (!ws || ws.readyState !== 1) { return; }
+      if (!t) return;
+      ws.send(JSON.stringify({ type: "msg", text: t.slice(0, 500) }));
+      $("text").value = "";
+      $("text").focus();
+      // Reposicionar el cursor al inicio después de enviar
+      setTimeout(positionCursor, 10);
+    }
+  });
+
+  // Función para posicionar el cursor
+  function positionCursor() {
+    const input = $("text");
+    const cursor = $("cursor");
+    const text = input.value;
+    
+    // Crear un span temporal para medir el ancho del texto
+    const tempSpan = document.createElement("span");
+    tempSpan.style.fontFamily = "monospace";
+    tempSpan.style.fontSize = "16px";
+    tempSpan.style.lineHeight = "1.5";
+    tempSpan.style.visibility = "hidden";
+    tempSpan.style.position = "absolute";
+    tempSpan.style.whiteSpace = "pre";
+    tempSpan.textContent = text;
+    document.body.appendChild(tempSpan);
+    
+    // Calcular la posición del cursor
+    const textWidth = tempSpan.offsetWidth;
+    document.body.removeChild(tempSpan);
+    
+    // Posicionar el cursor después del texto
+    cursor.style.left = (textWidth + 8) + "px"; // 8px es el padding-left del input
+  }
+
+  // Mostrar/ocultar cursor según el foco
+  $("text").addEventListener("focus", () => {
+    $("cursor").style.display = "inline";
+    positionCursor();
+  });
+
+  $("text").addEventListener("blur", () => {
+    $("cursor").style.display = "none";
+  });
+
+  // Reposicionar cursor cuando se escribe
+  $("text").addEventListener("input", positionCursor);
+
+  // Focus inicial en el username
+  $("username").focus();
+})();
+</script>
+</body>
+</html>
