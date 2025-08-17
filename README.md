@@ -10,6 +10,7 @@ Aplicación de chat en tiempo real construida con FastAPI y WebSockets.
 
 ## Arquitectura de la aplicación
 
+```
 ┌─────────────────┐    WebSocket    ┌─────────────────┐
 │   Frontend      │ ◄──────────────►│    Backend      │
 │   (Browser)     │                 │   (Python)      │
@@ -18,6 +19,7 @@ Aplicación de chat en tiempo real construida con FastAPI y WebSockets.
 │ • CSS           │                 │ • WebSockets    │
 │ • JavaScript    │                 │ • Lógica de chat│
 └─────────────────┘                 └─────────────────┘
+```
 
 ## Estructura del Proyecto
 
