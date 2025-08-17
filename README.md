@@ -7,8 +7,30 @@ Aplicación de chat en tiempo real construida con FastAPI y WebSockets.
 - Chat en tiempo real con WebSockets
 - Máximo 2 jugadores por sala
 - Interfaz tipo terminal minimalista
-- Colores aleatorios para usernames
-- Cursor parpadeante como terminal
+
+## Arquitectura de la aplicación
+
+┌─────────────────┐    WebSocket    ┌─────────────────┐
+│   Frontend      │ ◄──────────────►│    Backend      │
+│   (Browser)     │                 │   (Python)      │
+│                 │                 │                 │
+│ • HTML          │                 │ • FastAPI       │
+│ • CSS           │                 │ • WebSockets    │
+│ • JavaScript    │                 │ • Lógica de chat│
+└─────────────────┘                 └─────────────────┘
+
+## Estructura del Proyecto
+
+```
+Chat-app/
+├── app.py              # Servidor FastAPI
+├── requirements.txt    # Dependencias de Python
+├── templates/
+│   └── index.html     # Interfaz del chat
+├── Dockerfile         # Configuración de Docker
+├── docker-compose.yml # Orquestación de contenedores
+└── .dockerignore      # Archivos excluidos del build
+```
 
 ## Uso con Docker
 
@@ -48,19 +70,6 @@ Una vez ejecutada la aplicación:
 
 - **URL**: http://localhost:8000
 - **Puerto**: 8000
-
-## Estructura del Proyecto
-
-```
-Chat-app/
-├── app.py              # Servidor FastAPI
-├── requirements.txt    # Dependencias de Python
-├── templates/
-│   └── index.html     # Interfaz del chat
-├── Dockerfile         # Configuración de Docker
-├── docker-compose.yml # Orquestación de contenedores
-└── .dockerignore      # Archivos excluidos del build
-```
 
 ## Dependencias
 
