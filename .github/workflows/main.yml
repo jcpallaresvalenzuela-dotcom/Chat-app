@@ -8,15 +8,10 @@ on:
       - 'templates/**'
   workflow_dispatch:
 
-env:
-  ACR_NAME: ${{ vars.ACR_NAME }}
-  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-  RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: AZURE_CREDENTIALS
+    environment: dev
 
     steps:
       - name: Checkout repo
@@ -25,14 +20,13 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.SERVICE_PRINCIPAL }}
 
       - name: Azure CLI - Login ACR
         run: |
-          echo $ACR_NAME
-          az acr login --name $ACR_NAME
+          az acr login --name ${{ secrets.ACR_NAME }}
 
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ env.ACR_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-          docker push ${{ env.ACR_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker build -t ${{ secrets.ACR_NAME }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} .
+          docker push ${{ secrets.ACR_NAME }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
